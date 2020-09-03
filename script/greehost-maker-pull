@@ -1,0 +1,23 @@
+#!/usr/bin/env perl
+use warnings;
+use strict;
+use JSON::MaybeXS qw( decode_json );
+use File::Slurper qw( read_text );
+use Module::Runtime qw( use_module );
+use Try::Tiny;
+
+my $config = decode_json( read_text( '/.maker.json' ) );
+
+if ( exists $config->{pull} ) {
+    my $class = delete $config->{pull}{class};
+
+    my $pull_object = try {
+        use_module( "GreeHost::Maker::Pull::$class" )->new($config->{pull});
+    };
+
+    if ( ! $pull_object ) {
+        die "Error: failed to get pull object.";
+    }
+
+    $pull_object->run();
+}

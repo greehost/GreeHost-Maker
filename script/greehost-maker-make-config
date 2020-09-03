@@ -1,0 +1,25 @@
+#!/usr/bin/env perl
+use warnings;
+use strict;
+use JSON::MaybeXS qw( encode_json );
+
+exit 0 if -e 'greehost.json';
+
+my ( @make, @deploy ) = ( );
+
+sub deploy {
+    my ( $class, @args ) = @_;
+    push @deploy, { class => 'Deploy::' . $class, @args };
+} 
+
+sub make {
+    my ( $class, @args ) = @_;
+    push @make, { class => 'Make::' . $class, @args };
+}
+
+do './greehost.config';
+
+open my $sf, ">", "./greehost.json"
+    or die "Failed to open greehost.json for writing: $!";
+print $sf encode_json( { actions => { make => \@make, deploy => \@deploy } } );
+close $sf;

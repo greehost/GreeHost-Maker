@@ -1,0 +1,24 @@
+#!/usr/bin/env perl
+use warnings;
+use strict;
+use Module::Runtime qw( use_module );
+use JSON::MaybeXS qw( encode_json decode_json );
+use Try::Tiny;
+
+# Load The Config File
+open my $lf, "<", "greehost.json"
+    or die "Failed to open greehost.json for reading: $!";
+my $config = decode_json( do { local $/; <$lf> } );
+close $lf;
+
+foreach my $action ( @{$config->{actions}->{deploy}} ) {
+    my $module_name = delete $action->{class};
+
+    my $module = try {
+        use_module( "GreeHost::Maker::$module_name" )->new(%{$action});
+    } catch {
+        die "Error loading module $module_name: $_";
+    };
+
+    $module->run;
+}
